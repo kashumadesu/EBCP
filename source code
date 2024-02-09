@@ -1,0 +1,176 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+void clearScreen() {
+    #ifdef _WIN32
+        system("cls");
+    #else
+        printf("\033c");  
+    #endif
+}
+
+struct user {
+    char account[50];
+    char password[50];
+    float pendingElectricityBill;
+};
+
+void displayMenu() {
+    printf("\n\nPress 1 for electricity bill calculation");
+    printf("\nPress 2 for pending electricity bill");
+    printf("\nPress 3 to pay the pending bill");
+    printf("\nPress 4 for password change");
+    printf("\nPress 5 to exit");
+    printf("\n\nYour choice:\t");
+}
+
+float calculateBill(float unitsConsumed, float ratePerUnit, float fixedCharge) {
+    float electricityCharge = unitsConsumed * ratePerUnit;
+    float totalBill = electricityCharge + fixedCharge;
+
+    printf("\nElectricity Charge (%.2f PHP per unit x %.2f units): %.2f PHP", ratePerUnit, unitsConsumed, electricityCharge);
+    printf("\nFixed Monthly Charge: %.2f PHP", fixedCharge);
+    printf("\n----------------------------------------");
+    printf("\nTotal Electricity Bill: %.2f PHP\n", totalBill);
+
+    return totalBill;
+}
+
+int main() {
+    struct user usr;
+    FILE *fp;
+    char filename[50], pword[50];
+    int opt, choice;
+    char cont = 'y';
+    float amount, payment, change;
+
+    float ratePerUnit = 5.0;
+    float fixedCharge = 50.0;
+
+    do {
+        printf("\nWhat do you want to do?\n");
+        printf("1. Register an account\n");
+        printf("2. Login to an account\n");
+        printf("3. Exit\n");
+
+        printf("\nYour choice: ");
+        scanf("%d", &opt);
+
+        switch (opt) {
+            case 1:
+                clearScreen();
+                printf("\nEnter your account number: ");
+                scanf("%s", usr.account);
+                printf("Enter your new password: ");
+                scanf("%s", usr.password);
+                usr.pendingElectricityBill = 0;
+                strcpy(filename, usr.account);
+                fp = fopen(strcat(filename, ".dat"), "w");
+                fwrite(&usr, sizeof(struct user), 1, fp);
+                fclose(fp);
+                printf("\n\nAccount successfully registered");
+                break;
+
+            case 2:
+                clearScreen();
+                printf("\nAccount number:\t");
+                scanf("%s", usr.account);
+                printf("Password:\t");
+                scanf("%s", pword);
+                strcpy(filename, usr.account);
+                fp = fopen(strcat(filename, ".dat"), "r");
+                if (fp == NULL) {
+                    printf("\nAccount number not registered");
+                } else {
+                    fread(&usr, sizeof(struct user), 1, fp);
+                    fclose(fp);
+                    if (!strcmp(pword, usr.password)) {
+                        clearScreen();
+                        printf("\n\t\tWelcome %s", usr.account);
+                        do {
+                            displayMenu();
+                            scanf("%d", &choice);
+                            switch (choice) {
+                                case 1:
+                                    clearScreen();
+                                    printf("\nEnter the units consumed: ");
+                                    scanf("%f", &amount);
+                                    usr.pendingElectricityBill = calculateBill(amount, ratePerUnit, fixedCharge);
+                                    break;
+
+                                case 2:
+                                    clearScreen();
+                                    printf("\nPending Electricity Bill: %.2f PHP\n", usr.pendingElectricityBill);
+                                    break;
+
+                                case 3:
+                                    clearScreen();
+                                    printf("\nPending Electricity Bill: %.2f PHP", usr.pendingElectricityBill);
+                                    printf("\nEnter the payment amount: ");
+                                    scanf("%f", &payment);
+
+                                    if (payment >= usr.pendingElectricityBill) {
+                                        change = payment - usr.pendingElectricityBill;
+                                        usr.pendingElectricityBill = 0;
+
+                                        printf("\nBreakdown of Payment:");
+                                        printf("\n---------------------");
+                                        printf("\nPending Electricity Bill: %.2f PHP", usr.pendingElectricityBill);
+                                        printf("\nPayment: %.2f PHP", payment);
+                                        printf("\nChange: %.2f PHP", change);
+
+                                        printf("\n\nPending Electricity Bill paid successfully.");
+                                        if (change > 0) {
+                                            printf("\nChange: %.2f PHP", change);
+                                        }
+                                    } else {
+                                        printf("\nInsufficient payment. Please enter an amount equal to or greater than the pending bill.");
+                                    }
+                                    break;
+
+                                case 4:
+                                    break;
+
+                                case 5:
+                                    printf("\nAre you sure you want to exit? (y/n): ");
+                                    scanf(" %c", &cont);
+                                    if (cont == 'y') {
+                                        fp = fopen(filename, "w");
+                                        fwrite(&usr, sizeof(struct user), 1, fp);
+                                        fclose(fp);
+                                        printf("\nExiting the program. Goodbye!\n");
+                                        exit(0);
+                                    }
+                                    break;
+
+                                default:
+                                    printf("\nInvalid option");
+                            }
+
+                            if (choice != 5) {
+                                printf("\nDo you want to continue the transaction [y/n]\t");
+                                scanf(" %c", &cont);
+                                clearScreen();
+                            }
+                        } while (cont == 'y');
+                    } else {
+                        printf("\nInvalid password");
+                    }
+                }
+                break;
+
+            case 3:
+                printf("\nExiting the program. Goodbye!\n");
+                break;
+
+            default:
+                printf("\nInvalid option. Please choose again.\n");
+        }
+
+        while ((getchar()) != '\n');
+
+    } while (opt != 3);
+
+    return 0;
+}
