@@ -40,7 +40,7 @@ float calculateBill(float unitsConsumed, float ratePerUnit, float fixedCharge) {
 int main() {
     struct user usr;
     FILE *fp;
-    char filename[50], pword[50];
+    char filename[50], pword[50], newPword[50];
     int opt, choice;
     char cont = 'y';
     float amount, payment, change;
@@ -130,6 +130,11 @@ int main() {
                                     break;
 
                                 case 4:
+                                    clearScreen();
+                                    printf("\nEnter your new password: ");
+                                    scanf("%s", newPword);
+                                    strcpy(usr.password, newPword);
+                                    printf("\nPassword successfully changed");
                                     break;
 
                                 case 5:
